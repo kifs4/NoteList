@@ -1,0 +1,14 @@
+# Віртуальне середовище
+.venv/
+venv/
+ENV/
+
+# База даних
+*.sqlite3
+
+# Кеш Python
+__pycache__/
+*.pyc
+
+# Налаштування PyCharm
+.idea/

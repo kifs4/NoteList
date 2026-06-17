@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: NoteList API
+  description: |
+    Серверна частина веб-додатка для керування нотатками та списками справ (NoteList).
+    Включає модулі реєстрації, JWT-автентифікації, профілю користувача та повний пакет CRUD для завдань.
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000/api
+    description: Локальний сервер розробки NoteList
+
+paths:
+  /about/:
+    get:
+      summary: Отримання інформації про додаток NoteList
+      responses:
+        '200':
+          description: Успішна відповідь із описом сервісу
+
+  /auth/register/:
+    post:
+      summary: Реєстрація нового користувача в NoteList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                gender:
+                  type: string
+                  enum: [M, F, O]
+                birth_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Користувача успішно створено
+        '400':
+          description: Помилка валідації (наприклад, email вже зайнятий)
+
+  /auth/login/:
+    post:
+      summary: Авторизація (вхід) користувача та отримання JWT-токенів
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Успішний вхід. Повертає access та refresh токени.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refresh:
+                    type: string
+                  access:
+                    type: string
+        '401':
+          description: Неправильні облікові дані
+
+  /profile/:
+    get:
+      summary: Перегляд особистого профілю в NoteList
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Дані профілю користувача
+    put:
+      summary: Редагування даних профілю
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                gender:
+                  type: string
+                  enum: [M, F, O]
+                birth_date:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Профіль користувача успішно оновлено
+
+  /tasks/:
+    get:
+      summary: Отримання списку всіх нотаток авторизованого користувача
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Масив об'єктів-нотаток користувача
+    post:
+      summary: Створення нової нотатки/завдання
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Нотатку успішно створено
+
+  /tasks/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Отримання конкретної нотатки за її унікальним ID
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Детальна інформація про нотатку
+        '404':
+          description: Нотатку не знайдено (або вона належить іншому користувачу)
+    patch:
+      summary: Часткове редагування нотатки (зміна заголовка, опису чи статусу)
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                is_completed:
+                  type: boolean
+      responses:
+        '200':
+          description: Нотатку успішно оновлено
+    delete:
+      summary: Видалення нотатки з бази даних
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Нотатку успішно видалено
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
